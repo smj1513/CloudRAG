@@ -30,6 +30,9 @@ jobs:
         sudo journalctl --vacuum-time=1d
         # 임시 파일 정리
         sudo rm -rf /tmp/*
+        # Docker 빌드 캐시 정리
+        sudo rm -rf /var/lib/docker/tmp/*
+        sudo rm -rf /var/lib/buildkit/
         # 디스크 사용량 확인
         df -h
     
@@ -59,12 +62,8 @@ jobs:
         context: .
         push: true
         tags: ${{ steps.login-ecr.outputs.registry }}/cloudrag-app:latest
-        build-args: |
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        no-cache-filters: true
+        no-cache: true
+        platforms: linux/amd64
 
   deploy:
     needs: build-and-push
