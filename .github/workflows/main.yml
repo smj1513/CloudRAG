@@ -28,7 +28,7 @@ jobs:
 
     - name: Clean up Docker
       run: |
-        docker system prune -af --volumes
+        sudo docker system prune -af --volumes
         
     - name: Install dependencies
       run: |
@@ -55,7 +55,7 @@ jobs:
     
     - name: Clean up Docker
       run: |
-        docker system prune -af --volumes
+        sudo docker system prune -af --volumes
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
