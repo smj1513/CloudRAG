@@ -1,0 +1,39 @@
+{
+  "family": "cloudrag",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "cloudrag-app",
+      "image": "<ECR_REPOSITORY_URI>:latest",
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "OPENAI_API_KEY",
+          "value": "{{resolve:ssm:/cloudrag/OPENAI_API_KEY:1}}"
+        },
+        {
+          "name": "TAVILY_API_KEY",
+          "value": "{{resolve:ssm:/cloudrag/TAVILY_API_KEY:1}}"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/cloudrag",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+} 
