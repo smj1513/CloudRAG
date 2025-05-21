@@ -92,3 +92,4 @@ jobs:
     - name: Update ECS service
       run: |
         aws ecs update-service --cluster cloudrag-cluster --service cloudrag-service --force-new-deployment 
+        
