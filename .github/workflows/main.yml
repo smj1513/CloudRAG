@@ -19,9 +19,19 @@ jobs:
         sudo chmod 666 /var/run/docker.sock
         sudo usermod -aG docker $USER
     
-    - name: Clean up Docker
+    - name: Clean up system
       run: |
+        # Docker 리소스 정리
         sudo docker system prune -af --volumes
+        # 불필요한 패키지 제거
+        sudo apt-get clean
+        sudo apt-get autoremove -y
+        # 오래된 로그 파일 정리
+        sudo journalctl --vacuum-time=1d
+        # 임시 파일 정리
+        sudo rm -rf /tmp/*
+        # 디스크 사용량 확인
+        df -h
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -54,6 +64,7 @@ jobs:
           TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        no-cache-filters: true
 
   deploy:
     needs: build-and-push
