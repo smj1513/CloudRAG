@@ -11,7 +11,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        python-version: [3.11]
+        python-version: [3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v3
@@ -24,12 +24,17 @@ jobs:
     - name: Create .env file
       run: |
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-        echo "TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}" >> .env
-
+        echo "LANGCHAIN_API_KEY=${{ secrets.LANGCHAIN_API_KEY }}" >> .env
+        echo "LANGCHAIN_PROJECT=${{ secrets.LANGCHAIN_PROJECT }}" >> .env
+        
+    - name: Clean up Docker
+      run: |
+        docker system prune -af --volumes
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install --no-cache-dir -r requirements.txt
         
     - name: Run tests
       run: |
@@ -49,6 +54,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - name: Clean up Docker
+      run: |
+        docker system prune -af --volumes
+    
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
       
@@ -66,6 +75,8 @@ jobs:
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           LANGCHAIN_API_KEY=${{ secrets.LANGCHAIN_API_KEY }}
           LANGCHAIN_PROJECT=${{ secrets.LANGCHAIN_PROJECT }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
   deploy:
     needs: build-and-push
