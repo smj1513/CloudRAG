@@ -2,12 +2,6 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# 환경 변수 설정
-ARG OPENAI_API_KEY
-ARG TAVILY_API_KEY
-ENV OPENAI_API_KEY=$OPENAI_API_KEY
-ENV TAVILY_API_KEY=$TAVILY_API_KEY
-
 # 필요한 패키지 설치
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

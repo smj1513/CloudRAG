@@ -1,15 +1,12 @@
-name: CloudRAG CI/CD
+name: Simple CI/CD
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  build-and-push:
+  deploy:
     runs-on: self-hosted
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
     - uses: actions/checkout@v3
@@ -19,65 +16,23 @@ jobs:
         sudo chmod 666 /var/run/docker.sock
         sudo usermod -aG docker $USER
     
-    - name: Clean up system
+    - name: Clean up Docker
       run: |
-        # Docker 리소스 정리
         sudo docker system prune -af --volumes
-        # 불필요한 패키지 제거
-        sudo apt-get clean
-        sudo apt-get autoremove -y
-        # 오래된 로그 파일 정리
-        sudo journalctl --vacuum-time=1d
-        # 임시 파일 정리
-        sudo rm -rf /tmp/*
-        # Docker 빌드 캐시 정리
-        sudo rm -rf /var/lib/docker/tmp/*
-        sudo rm -rf /var/lib/buildkit/
-        # 디스크 사용량 확인
-        df -h
     
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-      with:
-        driver-opts: |
-          image=moby/buildkit:latest
-          network=host
-      
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-      
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-      with:
-        mask-password: true
-      
-    - name: Build and push
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.login-ecr.outputs.registry }}/cloudrag-app:latest
-        no-cache: true
-        platforms: linux/amd64
-
-  deploy:
-    needs: build-and-push
-    runs-on: self-hosted
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-        
-    - name: Update ECS service
+    - name: Build and run Docker container
       run: |
-        aws ecs update-service --cluster cloudrag-cluster --service cloudrag-service --force-new-deployment 
+        # 이전 컨테이너 중지 및 제거
+        sudo docker stop cloudrag-app || true
+        sudo docker rm cloudrag-app || true
+        
+        # 새 이미지 빌드
+        sudo docker build -t cloudrag-app .
+        
+        # 새 컨테이너 실행
+        sudo docker run -d \
+          --name cloudrag-app \
+          -p 8000:8000 \
+          -e OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+          -e TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} \
+          cloudrag-app
