@@ -14,12 +14,21 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - name: Set up Docker permissions
+      run: |
+        sudo chmod 666 /var/run/docker.sock
+        sudo usermod -aG docker $USER
+    
     - name: Clean up Docker
       run: |
         sudo docker system prune -af --volumes
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
+      with:
+        driver-opts: |
+          image=moby/buildkit:latest
+          network=host
       
     - name: Login to Amazon ECR
       id: login-ecr
